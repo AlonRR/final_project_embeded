@@ -82,4 +82,7 @@ void oledC_sendColorInt(uint16_t raw);
 void oledC_startWritingDisplay(void);
 void oledC_stopWritingDisplay(void);
 
+void oledC_setBackground(uint16_t color);
+void oledC_clearScreen(void);
+
 #endif

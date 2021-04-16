@@ -45,23 +45,31 @@
 /**
   Section: Included Files
 */
+#include <stdlib.h>
+#include <stdio.h>
+
 #include "System/system.h"
+#include "System/delay.h"
 #include "oledDriver/oledC_example.h"
 #include "oledDriver/oledC.h"
+#include "oledDriver/oledC_colors.h"
+#include "oledDriver/oledC_shapes.h"
 
 /*
                          Main application
  */
 int main(void)
 {
-    int count=0, pot;
+    int count=0, pot, prev_pot=-1;
     int wasPressed=0;
     int i;
+    char buff[10], prev_buff[10];
 
     // initialize the system
     SYSTEM_Initialize();
 
     oledC_setBackground(OLEDC_COLOR_SKYBLUE);
+    oledC_clearScreen();
     
     //Initialize
     TRISA |= (1<<11);
@@ -103,6 +111,17 @@ int main(void)
         while (!AD1CON1bits.DONE) ;       //Wait for conversion to complete
 
         pot = ADC1BUF0 ;
+        sprintf(buff,"%d", pot);
+        if (prev_pot>=0 && abs(pot-prev_pot)>1) {
+          sprintf(prev_buff,"%d", prev_pot);
+          oledC_DrawString(20, 5*8, 3, 3, prev_buff, OLEDC_COLOR_SKYBLUE);
+        }
+        // oledC_DrawRectangle(20, 5*8, 20+3*5*4, 5*8+3*8,OLEDC_COLOR_RED);
+        if (abs(pot-prev_pot)>1) {
+            oledC_DrawString(20, 5*8, 3, 3, buff, OLEDC_COLOR_BLACK);
+            prev_pot=pot;
+        }
+        DELAY_milliseconds(200);
     }    return 1;
 }
 /**

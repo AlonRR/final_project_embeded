@@ -203,6 +203,9 @@ bool oledC_open(void){
     return spi1_open();
 }
 
+
+static uint16_t background_color;
+
 void oledC_setup(void)
 {
     LATCbits.LATC8 = 0; /* set oledC_EN output low */
@@ -219,4 +222,25 @@ void oledC_setup(void)
     oledC_setColumnAddressBounds(0, 95);
     oledC_setRowAddressBounds(0, 95);
     oledC_setDisplayOrientation();
+}
+
+void oledC_clearScreen(void) 
+{    
+    uint8_t x;
+    uint8_t y;
+    oledC_setColumnAddressBounds(0,96);
+    oledC_setRowAddressBounds(0,96);
+    for(x = 0; x < 96; x++)
+    {
+        for(y = 0; y < 96; y++)
+        {
+            oledC_sendColorInt(background_color);
+        }
+    }
+}
+
+void oledC_setBackground(uint16_t color)
+{
+    background_color = color;
+    oledC_clearScreen();
 }

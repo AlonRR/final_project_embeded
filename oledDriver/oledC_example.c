@@ -28,7 +28,6 @@
 #include "oledC_shapes.h"
 
 static bool exampleInitialized;
-static uint16_t background_color;
 
 static const uint32_t logo[] = 
 { 
@@ -56,27 +55,6 @@ static const uint32_t logo[] =
     0b11111111100000000000000111111111,
     0b11111111111000000000011111111111
 };
-
-static void oledC_clearScreen(void) 
-{    
-    uint8_t x;
-    uint8_t y;
-    oledC_setColumnAddressBounds(0,96);
-    oledC_setRowAddressBounds(0,96);
-    for(x = 0; x < 96; x++)
-    {
-        for(y = 0; y < 96; y++)
-        {
-            oledC_sendColorInt(background_color);
-        }
-    }
-}
-
-static void oledC_setBackground(uint16_t color)
-{
-    background_color = color;
-    oledC_clearScreen();
-}
 
 static void oledC_example_setup(void)
 {
