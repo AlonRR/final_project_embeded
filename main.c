@@ -63,6 +63,7 @@ int main(void)
     int count=0, pot, prev_pot=-1;
     int wasPressed=0;
     int i;
+    char countBuf[20];
     char buff[10], prev_buff[10];
 
     // initialize the system
@@ -96,7 +97,11 @@ int main(void)
             LATA |= (1<<8);         //On
             if (!wasPressed) {
                 wasPressed=1;
+                if (count>0)
+                  oledC_DrawString(0, 0, 2, 2, countBuf, OLEDC_COLOR_SKYBLUE);
                 ++count;
+                sprintf(countBuf, "S1 hit:%d", count);
+                oledC_DrawString(0, 0, 2, 2, countBuf, OLEDC_COLOR_DARKGREEN);
             }
         }
 
@@ -112,16 +117,16 @@ int main(void)
 
         pot = ADC1BUF0 ;
         sprintf(buff,"%d", pot);
-        if (prev_pot>=0 && abs(pot-prev_pot)>1) {
+        if (prev_pot>=0 && abs(pot-prev_pot)>2) {
           sprintf(prev_buff,"%d", prev_pot);
           oledC_DrawString(20, 5*8, 3, 3, prev_buff, OLEDC_COLOR_SKYBLUE);
         }
         // oledC_DrawRectangle(20, 5*8, 20+3*5*4, 5*8+3*8,OLEDC_COLOR_RED);
-        if (abs(pot-prev_pot)>1) {
+        if (abs(pot-prev_pot)>2) {
             oledC_DrawString(20, 5*8, 3, 3, buff, OLEDC_COLOR_BLACK);
             prev_pot=pot;
         }
-        DELAY_milliseconds(200);
+        DELAY_milliseconds(100);
     }    return 1;
 }
 /**
