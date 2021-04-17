@@ -102,23 +102,3 @@ uint8_t spi1_readByte(void)
 {
     return SPI1BUFL;
 }
-
-/**
- * Interrupt from SPI on bit 8 received and SR moved to buffer
- * If interrupts are not being used, then call this method from the main while(1) loop
- */
-void spi1_isr(void)
-{
-    if(IFS3bits.SPI1RXIF == 1){
-        if(spi1_interruptHandler){
-            spi1_interruptHandler();
-        }
-        IFS3bits.SPI1RXIF = 0;
-    }
-}
-
-void spi1_setSpiISR(void(*handler)(void))
-{
-    spi1_interruptHandler = handler;
-}
-

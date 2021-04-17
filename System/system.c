@@ -94,18 +94,64 @@
 #pragma config SOSCHP = ON    //SOSC High Power Enable bit (valid only when SOSCSEL = 1->Enable SOSC high power mode (default)
 #pragma config ALTI2C1 = ALTI2CEN    //Alternate I2C pin Location->SDA1 and SCL1 on RB9 and RB8
 
-#include "../oledDriver/pin_manager.h"
+// #include "../oledDriver/pin_manager.h"
+#include <xc.h>
+
 #include "clock.h"
 #include "system.h"
 #include "delay.h"
-// #include "interrupt_manager.h"
-#include "traps.h"
+
 #include "../spiDriver/spi1_driver.h"
 #include "../oledDriver/oledC.h"
 
+static void Initialize_Pins(void)
+{
+    /****************************************************************************
+     * Setting the Output Latch SFR(s)
+     ***************************************************************************/
+    LATA = 0x0000;
+    LATB = 0x0000;
+    LATC = 0x0000;
+
+    /****************************************************************************
+     * Setting the GPIO Direction SFR(s)
+     ***************************************************************************/
+    TRISA = 0xFFFF;
+    TRISB = 0xFFFF;
+    TRISC = 0xFFFF;
+
+    /****************************************************************************
+     * Setting the Weak Pull Up and Weak Pull Down SFR(s)
+     ***************************************************************************/
+    IOCPDA = 0x0000;
+    IOCPDB = 0x0000;
+    IOCPDC = 0x0000;
+    IOCPUA = 0x0000;
+    IOCPUB = 0x0000;
+    IOCPUC = 0x0000;
+
+    /****************************************************************************
+     * Setting the Open Drain SFR(s)
+     ***************************************************************************/
+    ODCA = 0x0000;
+    ODCB = 0x0000;
+    ODCC = 0x0000;
+
+    /****************************************************************************
+     * Set the PPS
+     ***************************************************************************/
+    __builtin_write_OSCCONL(OSCCON & 0xbf); // unlock PPS
+
+    RPOR7bits.RP14R = 0x0007;    //RB14->SPI1:SDO1
+    RPOR7bits.RP15R = 0x0008;    //RB15->SPI1:SCK1OUT
+    RPINR20bits.SDI1R = 0x000D;    //RB13->SPI1:SDI1
+
+    __builtin_write_OSCCONL(OSCCON | 0x40); // lock PPS
+}
+
 void SYSTEM_Initialize(void)
 {
-    PIN_MANAGER_Initialize();
+    Initialize_Pins();
     CLOCK_Initialize();
     oledC_setup();
 }

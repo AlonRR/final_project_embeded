@@ -208,6 +208,14 @@ bool oledC_open(void){
 
 void oledC_setup(void)
 {
+    TRISAbits.TRISA13 = 0; //oledC Reset
+    TRISBbits.TRISB13 = 0; //oledC SDI output
+    TRISBbits.TRISB15 = 0; //oledC SCK1 output
+    TRISCbits.TRISC1  = 0; //oledC RW output
+    TRISCbits.TRISC3  = 0; //oledC D/C output
+    TRISCbits.TRISC8  = 0; //oledC EN output
+    TRISCbits.TRISC9  = 0; //oledC CS output
+
     LATCbits.LATC8 = 0; /* set oledC_EN output low */
     LATAbits.LATA13 = 1; /* set oledC_RST output high */
     LATCbits.LATC1 = 0; /* set oledC_RW output low */

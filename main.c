@@ -50,10 +50,14 @@
 
 #include "System/system.h"
 #include "System/delay.h"
-#include "oledDriver/oledC_example.h"
 #include "oledDriver/oledC.h"
 #include "oledDriver/oledC_colors.h"
 #include "oledDriver/oledC_shapes.h"
+
+void User_Initialize(void)
+{
+  ANSB = (1<<12);  //Set RB12 (AN8) to Input
+}
 
 /*
                          Main application
@@ -68,6 +72,7 @@ int main(void)
 
     // initialize the system
     SYSTEM_Initialize();
+    User_Initialize();
 
     oledC_setBackground(OLEDC_COLOR_SKYBLUE);
     oledC_clearScreen();

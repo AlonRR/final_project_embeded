@@ -44,7 +44,7 @@ void spi1_readBlock(void *block, size_t blockSize);
 void spi1_writeByte(uint8_t byte);
 uint8_t spi1_readByte(void);
 
-void spi1_isr(void);
-void spi1_setSpiISR(void(*handler)(void));
+// void spi1_isr(void);
+// void spi1_setSpiISR(void(*handler)(void));
 
 #endif // SPI1_DRIVER_H
