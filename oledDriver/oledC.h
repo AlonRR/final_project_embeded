@@ -69,20 +69,14 @@ void oledC_sendCommand(OLEDC_COMMAND cmd, uint8_t *payload, uint8_t payload_size
 void oledC_setRowAddressBounds(uint8_t min, uint8_t max);
 void oledC_setColumnAddressBounds(uint8_t min, uint8_t max);
 void oledC_setSleepMode(bool on);
-void oledC_setDisplayOrientation(void);
-
-void oledC_startReadingDisplay(void);
-void oledC_stopReadingDisplay(void);
-uint16_t oledC_readColor(void);
 
 bool oledC_open(void);
 void oledC_setup(void);
 void oledC_sendColor(uint8_t r, uint8_t g, uint8_t b);
 void oledC_sendColorInt(uint16_t raw);
-void oledC_startWritingDisplay(void);
-void oledC_stopWritingDisplay(void);
 
-void oledC_setBackground(uint16_t color);
 void oledC_clearScreen(void);
+void oledC_setBackground(uint16_t color);
+uint16_t oledC_getBackground(void);
 
 #endif

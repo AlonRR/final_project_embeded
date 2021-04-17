@@ -19,12 +19,13 @@
     MICROCHIP PROVIDES THIS SOFTWARE CONDITIONALLY UPON YOUR ACCEPTANCE OF THESE
     TERMS.
  */
+#include <xc.h>
 
 #include <stdint.h>
 #include <stdbool.h>
 #include "../spiDriver/spi1_driver.h"
 #include "oledC.h"
-#include "pin_manager.h"
+// #include "pin_manager.h"
 #include "../system/delay.h"
 
 enum STREAMING_MODES 
@@ -33,10 +34,58 @@ enum STREAMING_MODES
 };
 static uint8_t streamingMode = NOSTREAM;
 
-static void startStreamingIfNeeded(OLEDC_COMMAND cmd);
-static void stopStreaming(void);
-static uint16_t exchangeTwoBytes(uint8_t byte1, uint8_t byte2);
+// static void startStreamingIfNeeded(OLEDC_COMMAND cmd);
+// static void stopStreaming(void);
+// static uint16_t exchangeTwoBytes(uint8_t byte1, uint8_t byte2);
 
+//  ======  PRIVATE Functions   ========================================================
+static void startStreamingIfNeeded(OLEDC_COMMAND cmd)
+{
+    if(cmd == OLEDC_CMD_WRITE_RAM || cmd == OLEDC_CMD_READ_RAM)
+    {
+        streamingMode = cmd == OLEDC_CMD_WRITE_RAM ? WRITESTREAM : READSTREAM;
+    } 
+    else 
+    {
+        streamingMode = NOSTREAM;
+    }
+}
+
+// static void stopStreaming(void)
+// {
+//     streamingMode = NOSTREAM;
+// }
+
+static uint16_t exchangeTwoBytes(uint8_t byte1, uint8_t byte2)
+{
+    if(!oledC_open())
+    {
+        return 0xFFFF;
+    }
+    byte1 = spi1_exchangeByte(byte1);
+    byte2 = spi1_exchangeByte(byte2);
+    spi1_close();
+    return ((uint16_t)byte1) << 8 | byte2;
+}
+
+static void oledC_setDisplayOrientation(void) 
+{
+    uint8_t payload[1];
+    payload[0] = 0x32;
+    oledC_sendCommand(OLEDC_CMD_SET_REMAP_DUAL_COM_LINE_MODE, payload, 1);
+    payload[0] = 0x20;
+    oledC_sendCommand(OLEDC_CMD_SET_DISPLAY_START_LINE, payload, 1);
+}
+
+static void oledC_startWritingDisplay(void)
+{
+    oledC_sendCommand(OLEDC_CMD_WRITE_RAM, NULL, 0);    
+    LATCbits.LATC9 = 0; /* set oledC_nCS output low */
+    LATCbits.LATC3 = 1; /* set oledC_DC output high */
+}
+
+
+//  ======  PUBLIC Functions   ========================================================
 oledc_color_t oledC_parseIntToRGB(uint16_t raw)
 {
     oledc_color_t parsedColor;
@@ -58,35 +107,6 @@ uint16_t oledC_parseRGBToInt(uint8_t red, uint8_t green, uint8_t blue)
     byte1 = (red << 3) | (green >> 3);
     byte2 = (green << 5) | blue;
     return (((uint16_t)byte1) << 8) | byte2;
-}
-
-static void startStreamingIfNeeded(OLEDC_COMMAND cmd)
-{
-    if(cmd == OLEDC_CMD_WRITE_RAM || cmd == OLEDC_CMD_READ_RAM)
-    {
-        streamingMode = cmd == OLEDC_CMD_WRITE_RAM ? WRITESTREAM : READSTREAM;
-    } 
-    else 
-    {
-        streamingMode = NOSTREAM;
-    }
-}
-
-static void stopStreaming(void)
-{
-    streamingMode = NOSTREAM;
-}
-
-static uint16_t exchangeTwoBytes(uint8_t byte1, uint8_t byte2)
-{
-    if(!oledC_open())
-    {
-        return 0xFFFF;
-    }
-    byte1 = spi1_exchangeByte(byte1);
-    byte2 = spi1_exchangeByte(byte2);
-    spi1_close();
-    return ((uint16_t)byte1) << 8 | byte2;
 }
 
 void oledC_sendCommand(OLEDC_COMMAND cmd, uint8_t *payload, uint8_t payload_size)
@@ -133,53 +153,38 @@ void oledC_setSleepMode(bool on)
     oledC_sendCommand(on ? OLEDC_CMD_SET_SLEEP_MODE_ON : OLEDC_CMD_SET_SLEEP_MODE_OFF, NULL, 0);
 }
 
-void oledC_setDisplayOrientation(void) 
-{
-    uint8_t payload[1];
-    payload[0] = 0x32;
-    oledC_sendCommand(OLEDC_CMD_SET_REMAP_DUAL_COM_LINE_MODE, payload, 1);
-    payload[0] = 0x20;
-    oledC_sendCommand(OLEDC_CMD_SET_DISPLAY_START_LINE, payload, 1);
-}
+// void oledC_startReadingDisplay(void)
+// {
+//     oledC_sendCommand(OLEDC_CMD_READ_RAM, NULL, 0);    
+//     LATCbits.LATC9 = 0; /* set oledC_nCS output low */
+//     LATCbits.LATC3 = 1; /* set oledC_DC output high */
+// }
 
-void oledC_startReadingDisplay(void)
-{
-    oledC_sendCommand(OLEDC_CMD_READ_RAM, NULL, 0);    
-    LATCbits.LATC9 = 0; /* set oledC_nCS output low */
-    LATCbits.LATC3 = 1; /* set oledC_DC output high */
-}
+// void oledC_stopReadingDisplay(void)
+// {
+//     oledC_stopWritingDisplay();
+// }
 
-void oledC_stopReadingDisplay(void)
-{
-    oledC_stopWritingDisplay();
-}
+// uint16_t oledC_readColor(void)
+// {
+//     if(streamingMode != READSTREAM)
+//     {
+//         oledC_startReadingDisplay();
+//     }
+//     if(streamingMode != READSTREAM)
+//     {
+//         return 0xFFFF;
+//     }
+//     return exchangeTwoBytes(0xFF, 0xFF);
+// }
 
-uint16_t oledC_readColor(void)
-{
-    if(streamingMode != READSTREAM)
-    {
-        oledC_startReadingDisplay();
-    }
-    if(streamingMode != READSTREAM)
-    {
-        return 0xFFFF;
-    }
-    return exchangeTwoBytes(0xFF, 0xFF);
-}
 
-void oledC_startWritingDisplay(void)
-{
-    oledC_sendCommand(OLEDC_CMD_WRITE_RAM, NULL, 0);    
-    LATCbits.LATC9 = 0; /* set oledC_nCS output low */
-    LATCbits.LATC3 = 1; /* set oledC_DC output high */
-}
-
-void oledC_stopWritingDisplay(void)
-{
-    LATCbits.LATC9 = 1; /* set oledC_nCS output high */
-    LATCbits.LATC3 = 0; /* set oledC_DC output low */
-    stopStreaming();
-}
+// void oledC_stopWritingDisplay(void)
+// {
+//     LATCbits.LATC9 = 1; /* set oledC_nCS output high */
+//     LATCbits.LATC3 = 0; /* set oledC_DC output low */
+//     stopStreaming();
+// }
 
 void oledC_sendColor(uint8_t r, uint8_t g, uint8_t b)
 {
@@ -191,9 +196,6 @@ void oledC_sendColorInt(uint16_t raw)
     if(streamingMode != WRITESTREAM)
     {
         oledC_startWritingDisplay();
-    }
-    if(streamingMode != WRITESTREAM)
-    {
         return;
     }
     exchangeTwoBytes(raw >> 8, raw & 0x00FF);
@@ -203,8 +205,6 @@ bool oledC_open(void){
     return spi1_open();
 }
 
-
-static uint16_t background_color;
 
 void oledC_setup(void)
 {
@@ -223,6 +223,8 @@ void oledC_setup(void)
     oledC_setRowAddressBounds(0, 95);
     oledC_setDisplayOrientation();
 }
+
+static uint16_t background_color;
 
 void oledC_clearScreen(void) 
 {    
@@ -244,3 +246,9 @@ void oledC_setBackground(uint16_t color)
     background_color = color;
     oledC_clearScreen();
 }
+
+uint16_t oledC_getBackground(void)
+{
+    return background_color;
+}
+
