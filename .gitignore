@@ -6,3 +6,7 @@
 *.map
 *.hex
 *.mk
+.gen*
+.vscode/launch.json
+.vscode/settings.json
+.vscode/settings.json

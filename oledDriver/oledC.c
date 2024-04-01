@@ -84,6 +84,12 @@ static void oledC_startWritingDisplay(void)
     LATCbits.LATC3 = 1; /* set oledC_DC output high */
 }
 
+static void oledC_startReadingDisplay(void)
+{
+    oledC_sendCommand(OLEDC_CMD_READ_RAM, NULL, 0);    
+    LATCbits.LATC9 = 0; /* set oledC_nCS output low */
+    LATCbits.LATC3 = 1; /* set oledC_DC output high */
+}
 
 //  ======  PUBLIC Functions   ========================================================
 oledc_color_t oledC_parseIntToRGB(uint16_t raw)
@@ -153,30 +159,20 @@ void oledC_setSleepMode(bool on)
     oledC_sendCommand(on ? OLEDC_CMD_SET_SLEEP_MODE_ON : OLEDC_CMD_SET_SLEEP_MODE_OFF, NULL, 0);
 }
 
-// void oledC_startReadingDisplay(void)
-// {
-//     oledC_sendCommand(OLEDC_CMD_READ_RAM, NULL, 0);    
-//     LATCbits.LATC9 = 0; /* set oledC_nCS output low */
-//     LATCbits.LATC3 = 1; /* set oledC_DC output high */
-// }
-
 // void oledC_stopReadingDisplay(void)
 // {
 //     oledC_stopWritingDisplay();
 // }
 
-// uint16_t oledC_readColor(void)
-// {
-//     if(streamingMode != READSTREAM)
-//     {
-//         oledC_startReadingDisplay();
-//     }
-//     if(streamingMode != READSTREAM)
-//     {
-//         return 0xFFFF;
-//     }
-//     return exchangeTwoBytes(0xFF, 0xFF);
-// }
+uint16_t oledC_readColor(void)
+{
+    if(streamingMode != READSTREAM)
+        oledC_startReadingDisplay();
+    if(streamingMode != READSTREAM)
+        return 0xFFFF;
+
+    return exchangeTwoBytes(0xFF, 0xFF);
+}
 
 
 // void oledC_stopWritingDisplay(void)
@@ -194,10 +190,10 @@ void oledC_sendColor(uint8_t r, uint8_t g, uint8_t b)
 void oledC_sendColorInt(uint16_t raw)
 {
     if(streamingMode != WRITESTREAM)
-    {
         oledC_startWritingDisplay();
+    if(streamingMode != WRITESTREAM)
         return;
-    }
+
     exchangeTwoBytes(raw >> 8, raw & 0x00FF);
 }
 
