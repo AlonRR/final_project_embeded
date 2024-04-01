@@ -74,6 +74,7 @@ bool oledC_open(void);
 void oledC_setup(void);
 void oledC_sendColor(uint8_t r, uint8_t g, uint8_t b);
 void oledC_sendColorInt(uint16_t raw);
+uint16_t oledC_readColor(void);
 
 void oledC_clearScreen(void);
 void oledC_setBackground(uint16_t color);

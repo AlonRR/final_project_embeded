@@ -42,6 +42,7 @@ void oledC_DrawCircle(uint8_t center_x, uint8_t center_y, uint8_t radius, uint16
 void oledC_DrawRing(uint8_t center_x, uint8_t center_y, uint8_t radius, uint8_t width, uint16_t color);
 void oledC_DrawRectangle(uint8_t start_x, uint8_t start_y, uint8_t end_x, uint8_t end_y, uint16_t color);
 void oledC_DrawLine(uint8_t start_x, uint8_t start_y, uint8_t end_x, uint8_t end_y, uint8_t width, uint16_t color);
+uint16_t oledC_ReadPoint(uint8_t x, uint8_t y);
 void oledC_DrawPoint(uint8_t x, uint8_t y, uint16_t color);
 void oledC_DrawThickPoint(uint8_t center_x, uint8_t center_y, uint8_t width, uint16_t color);
 void oledC_DrawCharacter(uint8_t x, uint8_t y, uint8_t sx, uint8_t sy, uint8_t ch, uint16_t color);

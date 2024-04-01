@@ -83,6 +83,17 @@ static uint8_t coerceAddressAdditionWithinRange(uint8_t base_address, int8_t add
     return (uint8_t) (base_address+adder);
 }
 
+uint16_t oledC_ReadPoint(uint8_t x, uint8_t y)
+{
+    if(x > OLED_DIM_WIDTH || y > OLED_DIM_HEIGHT)
+    {
+        return 0;
+    }
+    oledC_setColumnAddressBounds(x,95);
+    oledC_setRowAddressBounds(y,95);
+    return oledC_readColor();
+}
+
 void oledC_DrawPoint(uint8_t x, uint8_t y, uint16_t color)
 {
     if(x > OLED_DIM_WIDTH || y > OLED_DIM_HEIGHT)
