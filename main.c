@@ -28,6 +28,8 @@
 #define YELLOW OLEDC_COLOR_YELLOW
 #define C_GREEN OLEDC_COLOR_PALEGREEN
 #define C_RED OLEDC_COLOR_TOMATO
+#define BOARD_Y 96 // logical board height size
+#define BOARD_X 48 // logical board width size
 
 typedef struct coordinates_t
 {
@@ -69,12 +71,13 @@ typedef struct charm_t
     coordinates charm_position; // x, y
 } charm_s;
 
-int game_board[48][96]; // 48x96 board * 2px per cell
-snake_s snake;          // snake is 2px width 4px length per body piece
+int game_board[BOARD_X][BOARD_Y]; // 48x96 board *** 2x2 px per cell
+snake_s snake;                    // snake is 2px width 4px length per body piece
 charm_s charm;
 enum directions direction; // current direction of the snake
 int score;
 bool game_over;
+int pot_off_set;
 
 void initialize_game(void);
 void clearBoard(void);
@@ -101,9 +104,9 @@ void random_available_board_position(coordinates *position)
     int x, y;
     while (1)
     {
-        random_number(&x, 48);
-        random_number(&y, 96);
-        if ((game_board[x][y] == EMPTY && game_board[x][y + 1] == EMPTY && game_board[x + 1][y] == EMPTY && game_board[x + 1][y + 1] == EMPTY))
+        random_number(&x, BOARD_X);
+        random_number(&y, BOARD_Y);
+        if (game_board[x][y] == EMPTY)
         {
             break;
         }
@@ -150,8 +153,8 @@ void initialize_game(void)
 {
     clearBoard();
     snake.snake_length = 4;
-    snake.snake_body[0].body_position.x = 48 / 2;
-    snake.snake_body[0].body_position.y = 96 / 2;
+    snake.snake_body[0].body_position.x = BOARD_X / 2; // snake starting position is the middle of the board
+    snake.snake_body[0].body_position.y = BOARD_Y / 2;
     snake.snake_body[0].color = RED;
 
     move_snake();
@@ -159,9 +162,9 @@ void initialize_game(void)
 
 void clearBoard(void)
 {
-    for (int i = 0; i < 96; i++)
+    for (int i = 0; i < BOARD_X; i++)
     {
-        for (int j = 0; j < 192; j++)
+        for (int j = 0; j < BOARD_Y; j++)
         {
             game_board[i][j] = EMPTY;
         }
@@ -214,7 +217,10 @@ bool check_wall_collision(void)
 {
     int add_x = 0, add_y = 0;
     direction_diff(direction, &add_x, &add_y);
-    if (snake.snake_body[0].body_position.x + add_x < 0 || snake.snake_body[0].body_position.x + add_x >= 96 || snake.snake_body[0].body_position.y + add_y < 0 || snake.snake_body[0].body_position.y + add_y >= 192)
+    if (snake.snake_body[0].body_position.x + add_x < 0 ||
+        snake.snake_body[0].body_position.x + add_x >= BOARD_X ||
+        snake.snake_body[0].body_position.y + add_y < 0 ||
+        snake.snake_body[0].body_position.y + add_y >= BOARD_Y)
     {
         return true;
     }
@@ -267,9 +273,12 @@ void view_game(void)
 {
     for (int i = 0; i < snake.snake_length; i++)
     {
-        oledC_DrawRectangle(snake.snake_body[i].body_position.x * 2, snake.snake_body[i].body_position.y * 2, 2, 2, snake.snake_body[i].color);
+        oledC_DrawRectangle(snake.snake_body[i].body_position.x * 2 + pot_off_set,
+                            snake.snake_body[i].body_position.y * 2,
+                            snake.snake_body[i].body_position.x * 2 + 2 + pot_off_set,
+                            snake.snake_body[i].body_position.y * 2 + 2,
+                            snake.snake_body[i].color);
     }
-
 }
 
 // void placeSnake(void)
@@ -285,16 +294,18 @@ void view_game(void)
 //     game_board[snake.snake_head_position[0]][snake.snake_head_position[1]] = SNAKE;
 // }
 
-void User_Initialize(void)
-{
-}
-
 void errorStop(char *msg)
 {
     oledC_DrawString(0, 20, 2, 2, msg, OLEDC_COLOR_DARKRED);
 
     for (;;)
         ;
+}
+
+void initialize_micro_chip(void)
+{
+
+    SYSTEM_Initialize();
 }
 
 /*
@@ -313,8 +324,6 @@ int main(void)
     char yy[] = "     ";
     char zz[] = "     ";
     unsigned char xyz[6] = {0};
-
-    SYSTEM_Initialize();
 
     oledC_setBackground(OLEDC_COLOR_SKYBLUE);
     oledC_clearScreen();
