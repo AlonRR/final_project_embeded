@@ -71,6 +71,7 @@ typedef struct charm_t
     coordinates charm_position; // x, y
 } charm_s;
 
+// make it a struct? maybe???
 int game_board[BOARD_X][BOARD_Y]; // 48x96 board *** 2x2 px per cell
 snake_s snake;                    // snake is 2px width 4px length per body piece
 charm_s charm;
@@ -89,11 +90,17 @@ enum board_options check_hit_something(void);
 void snake_game_options(void);
 void random_available_board_position(coordinates *position);
 void random_number(int *number, int max);
+void view_game(void);
+void errorStop(char *msg);
+void potentiometer_initilize(void);
+void accelerometer_error_handler(I2Cerror status);
+void accelerometer_initialize(void);
+void initialize_micro_chip(void);
 
 void random_number(int *number, int max)
 {
     unsigned char seed[6] = {0};
-    i2cReadSlaveMultRegister(0x3A, 0x32, 6, seed);
+    accelerometer_error_handler(i2cReadSlaveMultRegister(0x3A, 0x32, 6, seed));
     srand(seed);
     *number = rand() % max;
 }
@@ -271,13 +278,15 @@ void snake_game_options()
 
 void view_game(void)
 {
+    int current_x = 0, current_y = 0;
     for (int i = 0; i < snake.snake_length; i++)
     {
-        oledC_DrawRectangle(snake.snake_body[i].body_position.x * 2 + pot_off_set,
-                            snake.snake_body[i].body_position.y * 2,
-                            snake.snake_body[i].body_position.x * 2 + 2 + pot_off_set,
-                            snake.snake_body[i].body_position.y * 2 + 2,
-                            snake.snake_body[i].color);
+        if (pot_off_set +)
+            oledC_DrawRectangle(snake.snake_body[i].body_position.x * 2,
+                                snake.snake_body[i].body_position.y * 2 + pot_off_set,
+                                snake.snake_body[i].body_position.x * 2 + 2,
+                                snake.snake_body[i].body_position.y * 2 + 2 + pot_off_set,
+                                snake.snake_body[i].color);
     }
 }
 
@@ -302,23 +311,94 @@ void errorStop(char *msg)
         ;
 }
 
+// NEEDS CHECKING !!! ???
+void read_potentiometer_offset(void)
+{
+    // Select AN8 for A/D conversion
+    AD1CHS = (1 << 4);
+    // Perform A/D Conversion
+    AD1CON1 |= (1 << 15);          // A/D Converter turned on
+    AD1CON1 |= (1 << 1);           // sample
+    for (int i = 0; i < 1000; i++) // delay
+        ;
+    AD1CON1 &= ~(1 << 1);      // stop sampling
+    while ((AD1CON1 & 1) == 0) // wait for conversion to complete
+        ;
+    pot_off_set = (int)(((float)ADC1BUF0 / 1023.0) * 96.0);
+}
+
+// ???
+void potentiometer_initilize(void)
+{
+    AD1CON1 = 0;
+    AD1CON1 |= (1 << 15); // A/D Converter turned on
+    AD1CON2 = 0;
+    AD1CON3bits.ADCS = 0xFF;
+    AD1CON3bits.SAMC = 0x10;
+    AD1CON3bits.ADRC = 0;
+
+    TRISBbits.TRISB12 = 1; // set RB12 as input
+    ANSBbits.ANSB12 = 1;   // set RB12 as analog input
+    AD1CHS = 8;
+}
+
+void accelerometer_error_handler(I2Cerror status)
+{
+    // potential error handling
+    // switch (status)
+    // {
+    // case OK:
+    //     break;
+    // case NACK:
+    // case ACK:
+    // case BAD_ADDR:
+    // case BAD_REG:
+    //     errorStop("I2C Error");
+    // default:
+    //     break;
+    // }
+
+    if (status != OK)
+        errorStop("I2C Error");
+}
+
+void accelerometer_initialize(void)
+{
+    unsigned char id = 0;
+    I2Cerror rc;
+
+    i2c1_driver_driver_close();
+    i2c1_open();
+    accelerometer_error_handler(i2cReadSlaveRegister(0x3A, 0, &id));
+    if (id != 0xE5)
+        errorStop("Acc!Found");
+    accelerometer_error_handler(i2cWriteSlave(0x3A, 0x2D, 8));
+}
+
 void initialize_micro_chip(void)
 {
-
+    // OLED & clock initializer
     SYSTEM_Initialize();
+    // initialize potentiometer
+    potentiometer_initilize();
+    // initialize the accelerometer
+    accelerometer_initialize();
 }
 
 /*
                          Main application
- */
+*/
 int main(void)
 {
+    // initialize the microchip
+    initialize_micro_chip();
     // initialize game board with 0
     clearBoard();
 
     // ignore
-    unsigned char id = 0;
-    I2Cerror rc;
+    // unsigned char id = 0;
+    // I2Cerror rc;
+
     int x, y, z;
     char xx[] = "     ";
     char yy[] = "     ";
@@ -328,20 +408,21 @@ int main(void)
     oledC_setBackground(OLEDC_COLOR_SKYBLUE);
     oledC_clearScreen();
 
-    i2c1_driver_driver_close();
-    i2c1_open();
+    // moved to accelerometer_initialize
+    // i2c1_driver_driver_close();
+    // i2c1_open();
 
-    rc = i2cReadSlaveRegister(0x3A, 0, &id);
+    // rc = i2cReadSlaveRegister(0x3A, 0, &id);
 
-    if (rc == OK)
-        if (id == 0xE5)
-            oledC_DrawString(10, 10, 2, 2, "ADXL345", OLEDC_COLOR_BLACK);
-        else
-            errorStop("Acc!Found");
-    else
-        errorStop("I2C Error");
+    // if (rc == OK)
+    //     if (id == 0xE5)
+    //         oledC_DrawString(10, 10, 2, 2, "ADXL345", OLEDC_COLOR_BLACK);
+    //     else
+    //         errorStop("Acc!Found");
+    // else
+    //     errorStop("I2C Error");
 
-    rc = i2cWriteSlave(0x3A, 0x2D, 8);
+    // rc = i2cWriteSlave(0x3A, 0x2D, 8);
 
     oledC_DrawString(2, 30, 2, 2, "X:", OLEDC_COLOR_BLACK);
     oledC_DrawString(2, 50, 2, 2, "Y:", OLEDC_COLOR_BLACK);
