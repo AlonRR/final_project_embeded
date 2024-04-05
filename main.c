@@ -159,11 +159,13 @@ void find_direction(void)
 void initialize_game(void)
 {
     clearBoard();
-    snake.snake_length = 4;
+    for (int i = 0; i <= 4; i++){
+        set_snake_color();
+        snake.snake_length = i;
+    }
     snake.snake_body[0].body_position.x = BOARD_X / 2; // snake starting position is the middle of the board
     snake.snake_body[0].body_position.y = BOARD_Y / 2;
     snake.snake_body[0].color = RED;
-
     move_snake();
 }
 
@@ -204,13 +206,14 @@ void move_snake(void)
 {
     int add_x = 0;
     int add_y = 0;
-    direction_diff(direction, &add_x, &add_y);
+    direction_diff(&add_x, &add_y);
 
     // moves the snake body
     for (int i = 1; i < snake.snake_length; i++)
     {
         snake.snake_body[i].body_position.x = snake.snake_body[i - 1].body_position.x;
         snake.snake_body[i].body_position.y = snake.snake_body[i - 1].body_position.y;
+        snake.snake_body[i].color = snake.snake_body[i - 1].color;
     }
 
     // moves the snake head
@@ -223,7 +226,7 @@ void move_snake(void)
 bool check_wall_collision(void)
 {
     int add_x = 0, add_y = 0;
-    direction_diff(direction, &add_x, &add_y);
+    direction_diff(&add_x, &add_y);
     if (snake.snake_body[0].body_position.x + add_x < 0 ||
         snake.snake_body[0].body_position.x + add_x >= BOARD_X ||
         snake.snake_body[0].body_position.y + add_y < 0 ||
@@ -239,8 +242,8 @@ enum board_options check_hit_something(void)
 {
     int add_x = 0, add_y = 0;
     enum board_options hit = EMPTY;
-    direction_diff(direction, &add_x, &add_y);
-    if (check_wall_collision(direction))
+    direction_diff(&add_x, &add_y);
+    if (check_wall_collision())
     {
         hit = WALL;
     }
@@ -249,6 +252,24 @@ enum board_options check_hit_something(void)
         hit = game_board[snake.snake_body[0].body_position.x + add_x][snake.snake_body[0].body_position.y + add_y];
     }
     return hit;
+}
+
+void set_snake_color(void)
+{
+    switch ((snake.snake_length - 1) % 3) // snake length - 1 to avoid the head
+    {
+    case 0:
+        snake.snake_body[0].color = GREEN;
+        break;
+    case 1:
+        snake.snake_body[0].color = BLUE;
+        break;
+    case 2:
+        snake.snake_body[0].color = YELLOW;
+        break;
+    default:
+        break;
+    }
 }
 
 void snake_game_options()
@@ -265,6 +286,7 @@ void snake_game_options()
         break;
     case CHARM_GREEN:
         snake.snake_length++;
+        set_snake_color();
         move_snake();
         break;
     case CHARM_RED:
@@ -278,14 +300,15 @@ void snake_game_options()
 
 void view_game(void)
 {
-    int current_x = 0, current_y = 0;
+    int current_y = 0;
     for (int i = 0; i < snake.snake_length; i++)
     {
-        if (pot_off_set +)
+        current_y = snake.snake_body[i].body_position.y * 2 + pot_off_set;
+        if (current_y <= 96)
             oledC_DrawRectangle(snake.snake_body[i].body_position.x * 2,
-                                snake.snake_body[i].body_position.y * 2 + pot_off_set,
+                                current_y,
                                 snake.snake_body[i].body_position.x * 2 + 2,
-                                snake.snake_body[i].body_position.y * 2 + 2 + pot_off_set,
+                                current_y + 2,
                                 snake.snake_body[i].color);
     }
 }
@@ -365,8 +388,6 @@ void accelerometer_error_handler(I2Cerror status)
 void accelerometer_initialize(void)
 {
     unsigned char id = 0;
-    I2Cerror rc;
-
     i2c1_driver_driver_close();
     i2c1_open();
     accelerometer_error_handler(i2cReadSlaveRegister(0x3A, 0, &id));
@@ -385,6 +406,38 @@ void initialize_micro_chip(void)
     accelerometer_initialize();
 }
 
+void timer_1_init()
+{
+    // Timer1 control register
+    T1CON = 0;
+    T1CONbits.TON = 1;
+    T1CONbits.TSIDL = 1;
+    T1CONbits.TGATE = 0;
+    T1CONbits.TCKPS = 0b10; // 1:64 prescaler
+    T1CONbits.TCS = 0;
+
+    // Timer1 interrupt settings and period
+    TMR1 = 0;
+    PR1 = 0xF424;      // timer period value
+    IFS0bits.T1IF = 0; // Clear Timer1 interrupt flag
+    IEC0bits.T1IE = 1; // Enable Timer1 interrupt
+}
+
+void __attribute__((__interrupt__)) _T1Interrupt(void)
+{
+    read_potentiometer_offset();
+    find_direction();
+    snake_game_options();
+    view_game();
+    IFS0bits.T1IF = 0;
+}
+
+void view_initialize(void)
+{
+    oledC_setBackground(OLEDC_COLOR_BLACK);
+    oledC_clearScreen();
+    timer_1_init();
+}
 /*
                          Main application
 */
@@ -392,67 +445,13 @@ int main(void)
 {
     // initialize the microchip
     initialize_micro_chip();
+    // initialize the view screen
+    view_initialize();
     // initialize game board with 0
-    clearBoard();
-
-    // ignore
-    // unsigned char id = 0;
-    // I2Cerror rc;
-
-    int x, y, z;
-    char xx[] = "     ";
-    char yy[] = "     ";
-    char zz[] = "     ";
-    unsigned char xyz[6] = {0};
-
-    oledC_setBackground(OLEDC_COLOR_SKYBLUE);
-    oledC_clearScreen();
-
-    // moved to accelerometer_initialize
-    // i2c1_driver_driver_close();
-    // i2c1_open();
-
-    // rc = i2cReadSlaveRegister(0x3A, 0, &id);
-
-    // if (rc == OK)
-    //     if (id == 0xE5)
-    //         oledC_DrawString(10, 10, 2, 2, "ADXL345", OLEDC_COLOR_BLACK);
-    //     else
-    //         errorStop("Acc!Found");
-    // else
-    //     errorStop("I2C Error");
-
-    // rc = i2cWriteSlave(0x3A, 0x2D, 8);
-
-    oledC_DrawString(2, 30, 2, 2, "X:", OLEDC_COLOR_BLACK);
-    oledC_DrawString(2, 50, 2, 2, "Y:", OLEDC_COLOR_BLACK);
-    oledC_DrawString(2, 70, 2, 2, "Z:", OLEDC_COLOR_BLACK);
+    initialize_game();
 
     for (;;)
-    {
-        int i;
-
-        i2cReadSlaveMultRegister(0x3A, 0x32, 6, xyz);
-
-        x = xyz[0] + xyz[1] * 256; // 2xbytes ==> word
-        y = xyz[2] + xyz[3] * 256;
-        z = xyz[4] + xyz[5] * 256;
-
-        sprintf(xx, "%d", x); // Make it a string
-        sprintf(yy, "%d", y);
-        sprintf(zz, "%d", z);
-
-        //  === Display Axes Acceleration   ====================
-        oledC_DrawString(26, 30, 2, 2, xx, OLEDC_COLOR_BLACK);
-        oledC_DrawString(26, 50, 2, 2, yy, OLEDC_COLOR_BLACK);
-        oledC_DrawString(26, 70, 2, 2, zz, OLEDC_COLOR_BLACK);
-        DELAY_milliseconds(500);
-
-        //  === Erase Axes Acceleration   ====================
-        oledC_DrawString(26, 30, 2, 2, xx, OLEDC_COLOR_SKYBLUE);
-        oledC_DrawString(26, 50, 2, 2, yy, OLEDC_COLOR_SKYBLUE);
-        oledC_DrawString(26, 70, 2, 2, zz, OLEDC_COLOR_SKYBLUE);
-    }
+        ;
 }
 /**
  End of File
