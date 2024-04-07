@@ -39,7 +39,7 @@ enum board_options
     SNAKE = 1,
     CHARM_GREEN = 2, // increase snake length
     CHARM_RED = 3,   // decrease snake length
-    DIDNT_MOVE = 4,
+    // DIDNT_MOVE = 4,
 };
 
 enum directions
@@ -48,7 +48,7 @@ enum directions
     DOWN = 1,
     LEFT = 2,
     RIGHT = 3,
-    NO_MOVE = 4,
+    // NO_MOVE = 4,
 };
 
 typedef struct snake_body_t
@@ -73,7 +73,7 @@ typedef struct charm_t
 int game_board[BOARD_X][BOARD_Y]; // 48x96 board *** 2x2 px per cell
 snake_s snake;                    // snake is 2px width 4px length per body piece
 charm_s charm[8];                 // 8 charms on the board
-enum directions direction = DIDNT_MOVE;   // current direction of the snake
+enum directions direction = DOWN; // current direction of the snake
 int score = 0;
 bool game_over = false;
 int pot_off_set = 0;
@@ -147,9 +147,8 @@ void find_direction(void)
         y = xyz[2];
     else
         y = xyz[3];
-    if (x < 100 && y < 100)
+    if (x < 200 && y < 200)
     {
-        direction = DIDNT_MOVE;
         return;
     }
     if (x > y)
@@ -213,20 +212,20 @@ void direction_diff(int16_t *x, int16_t *y)
 {
     switch (direction)
     {
-    case UP:
+    case LEFT:
         *x = -1;
         break;
-    case DOWN:
+    case RIGHT:
         *x = 1;
         break;
-    case LEFT:
+    case UP:
         *y = -1;
         break;
-    case RIGHT:
+    case DOWN:
         *y = 1;
         break;
-    case DIDNT_MOVE:
-        break;
+    // case DIDNT_MOVE:
+    // break;
     default:
         break;
     }
@@ -241,7 +240,7 @@ void move_snake(void)
 
     erase_snake_color();
     // moves the snake body
-    for (int i = snake.snake_length+1; i > 1; i--)
+    for (int i = snake.snake_length + 1; i > 1; i--)
     {
         snake.snake_body[i].body_position.x = snake.snake_body[i - 1].body_position.x;
         snake.snake_body[i].body_position.y = snake.snake_body[i - 1].body_position.y;
@@ -277,11 +276,11 @@ enum board_options check_hit_something(void)
 {
     enum board_options hit = EMPTY;
     int16_t add_x = 0, add_y = 0;
+    // if(direction == NO_MOVE)
+    // {
+    //     return DIDNT_MOVE;
+    // }
     direction_diff(&add_x, &add_y);
-    if(add_x == 0 && add_y == 0)
-    {
-        return DIDNT_MOVE;
-    }
     if (check_wall_collision())
     {
         hit = WALL;
@@ -314,7 +313,7 @@ void set_snake_color()
 // erase past last body piece color
 void erase_snake_color(void)
 {
-    snake.snake_body[snake.snake_length+1].color = oledC_getBackground();
+    snake.snake_body[snake.snake_length + 1].color = oledC_getBackground();
 }
 
 void snake_game_options()
@@ -324,7 +323,7 @@ void snake_game_options()
     {
     case WALL:
     case SNAKE:
-    case DIDNT_MOVE:
+        // case DIDNT_MOVE:
         // do nothing
         break;
     case EMPTY:
@@ -496,7 +495,7 @@ void view_initialize(void)
 }
 
 /*
-                         Main application
+                      Main application
  */
 int main(void)
 {
@@ -513,7 +512,8 @@ int main(void)
         find_direction();
         snake_game_options();
         view_game();
-        DELAY_milliseconds(300);
+        DELAY_milliseconds(1000);
+        oledC_clearScreen();
     };
 }
 /**
