@@ -5,7 +5,7 @@
  * Created on April 21, 2022
  */
 
-#include "i2cDriver/i2c1_driver.h"
+#include "../i2cDriver/i2c1_driver.h"
 #include "Accel_i2c.h"
 
 
