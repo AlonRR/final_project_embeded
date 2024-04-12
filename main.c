@@ -147,6 +147,7 @@ void find_direction(void)
         y = xyz[2];
     else
         y = xyz[3];
+        
     if (x < 200 && y < 200)
     {
         return;
@@ -422,22 +423,25 @@ void potentiometer_initilize(void)
 
 void accelerometer_error_handler(I2Cerror status)
 {
-    // potential error handling
-    // switch (status)
-    // {
-    // case OK:
-    //     break;
-    // case NACK:
-    // case ACK:
-    // case BAD_ADDR:
-    // case BAD_REG:
-    //     errorStop("I2C Error");
-    // default:
-    //     break;
-    // }
-
-    if (status != OK)
-        errorStop("I2C Error");
+    // error handling
+    switch (status)
+    {
+    case NACK:
+        errorStop("I2C NACK");
+        break;
+    case ACK:
+        errorStop("I2C ACK");
+        break;
+    case BAD_ADDR:
+        errorStop("I2C BAD ADDR");
+        break;
+    case BAD_REG:
+        errorStop("I2C BAD REG");
+        break;
+    case OK:
+    default:
+        break;
+    }
 }
 
 void accelerometer_initialize(void)
