@@ -17,8 +17,9 @@
 #include "oledDriver/oledC_shapes.h"
 
 #include "i2cDriver/i2c1_driver.h"
-#include "Accel_i2c.h"
-// #include "snake/snake_globals.h"
+#include "accel_i2c/Accel_i2c.h"
+#include "snake/snake_globals.h"
+#include "snake/snake_control.h"
 
 #define MAX_SNAKE_SIZE 10
 // #define C_GREEN OLEDC_COLOR_PALEGREEN
